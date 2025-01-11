@@ -1,9 +1,9 @@
-use std::{collections::HashMap, net::{Ipv4Addr, SocketAddrV4}};
+use std::{collections::HashMap, net::{Ipv4Addr, SocketAddrV4}, str::FromStr};
 
 use anyhow::bail;
 use bytes::Bytes;
 use ed25519_dalek::Signature;
-use iroh::{endpoint, Endpoint, PublicKey, SecretKey};
+use iroh::{endpoint, Endpoint, NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
 use iroh_gossip::{net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender}, proto::TopicId, ALPN};
 use serde::{Deserialize, Serialize};
 use futures_lite::stream::StreamExt;
@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
 
     let endpoint = Endpoint::builder()
         .secret_key(secret_key)
-        .bind_addr_v4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0))
+        .bind_addr_v4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 57473))
         .bind()
         .await?;
 
@@ -30,11 +30,15 @@ async fn main() -> anyhow::Result<()> {
 
     println!("NodeId: {:?}",endpoint.node_addr().await);
     println!("Joining gossip sup..");
+    //let node_id_bytes = hex::decode("030ac011d3021c72e3ae2461eeec7d95b23453e308033577d80cdaad1688f90e")?;
+    //let node_id = NodeId::try_from(node_id_bytes.as_slice())?;
+    //endpoint.add_node_addr(NodeAddr::from_parts(node_id, Some(RelayUrl::from_str("https://euw1-1.relay.iroh.network./")?),vec![]))?;
+    //println!("endpoint");
     let (mut sender, receiver) = gossip.subscribe_and_join(topic_id, vec![]).await.unwrap().split();
 
     // Start peer message handler
     println!("starting peer message handler..");
-    tokio::spawn(async move { peer_message_handler(receiver)});
+    tokio::spawn(async move { peer_message_handler(receiver).await.is_ok() });
 
     // Send initial message
     let init_message = Message::Init { node_id: endpoint.node_id().to_string() };    
@@ -77,10 +81,13 @@ async fn peer_message_handler(mut receiver: GossipReceiver) -> anyhow::Result<()
     let mut connected_nodes = HashMap::new();
 
     loop {
+        println!("Loop!");
         let event = match receiver.try_next().await {
             Ok(event) => match event { Some(event) => event, None => continue},
             Err(_) => continue,
         };
+
+        println!("Event: {:?}",event);
 
         match event {
             Event::Gossip(gossip_event) => match gossip_event {

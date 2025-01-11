@@ -17,3 +17,4 @@ bytes = { version = "1.7", features = ["serde"] }
 ed25519-dalek = { version = "2.0.0", features = ["serde", "rand_core"] }
 postcard = { version = "1", default-features = false, features = ["alloc", "use-std", "experimental-derive"] }
 futures-lite = "2"
+hex = "0.4"
