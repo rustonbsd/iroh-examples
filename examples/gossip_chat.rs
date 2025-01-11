@@ -19,15 +19,16 @@ async fn main() -> anyhow::Result<()> {
         .secret_key(secret_key)
         .bind_addr_v4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0))
         .bind()
-        .await.unwrap();
+        .await?;
 
     let gossip = Gossip::builder().spawn(endpoint.clone()).await.unwrap();
 
     let router = iroh::protocol::Router::builder(endpoint.clone())
         .accept(ALPN, gossip.clone())
         .spawn()
-        .await.unwrap();
+        .await?;
 
+    println!("NodeId: {:?}",endpoint.node_addr().await);
     println!("Joining gossip sup..");
     let (mut sender, receiver) = gossip.subscribe_and_join(topic_id, vec![]).await.unwrap().split();
 
