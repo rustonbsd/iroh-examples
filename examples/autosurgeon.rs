@@ -1,7 +1,8 @@
 use autosurgeon::{Hydrate,Reconcile,hydrate,reconcile};
 
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut doc = automerge::AutoCommit::new();
     
 }
