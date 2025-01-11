@@ -8,7 +8,6 @@ use iroh_gossip::{net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender
 use serde::{Deserialize, Serialize};
 use futures_lite::stream::StreamExt;
 
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
 
@@ -17,7 +16,8 @@ async fn main() -> anyhow::Result<()> {
 
     let endpoint = Endpoint::builder()
         .secret_key(secret_key)
-        .bind_addr_v4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 57473))
+        .bind_addr_v4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0))
+        .discovery_n0()
         .bind()
         .await?;
 
@@ -28,9 +28,11 @@ async fn main() -> anyhow::Result<()> {
         .spawn()
         .await?;
 
+    
+
     println!("NodeId: {:?}",endpoint.node_addr().await);
     println!("Joining gossip sup..");
-    //let node_id_bytes = hex::decode("030ac011d3021c72e3ae2461eeec7d95b23453e308033577d80cdaad1688f90e")?;
+    //let node_id_bytes = hex::decode("50211f29668e5e6d21fd232ef353ed01afef2422b6afb847f1e92d8f7c1cd23f")?;
     //let node_id = NodeId::try_from(node_id_bytes.as_slice())?;
     //endpoint.add_node_addr(NodeAddr::from_parts(node_id, Some(RelayUrl::from_str("https://euw1-1.relay.iroh.network./")?),vec![]))?;
     //println!("endpoint");
