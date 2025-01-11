@@ -28,9 +28,11 @@ async fn main() -> anyhow::Result<()> {
         .spawn()
         .await.unwrap();
 
+    println!("Joining gossip sup..");
     let (mut sender, receiver) = gossip.subscribe_and_join(topic_id, vec![]).await.unwrap().split();
 
     // Start peer message handler
+    println!("starting peer message handler..");
     tokio::spawn(async move { peer_message_handler(receiver)});
 
     // Send initial message
@@ -39,12 +41,13 @@ async fn main() -> anyhow::Result<()> {
         bail!("failed to send init message!")
     }
 
-    let mut buffer = String::new();
-    let stdin = std::io::stdin(); // We get `Stdin` here.
-    loop {
-        stdin.read_line(&mut buffer)?;
-        let message = Message::Text { text: buffer.clone() };
+    // broadcast each line we type
+    let (line_tx, mut line_rx) = tokio::sync::mpsc::channel(1);
+    std::thread::spawn(move || input_loop(line_tx));
 
+    println!("> type a message and hit enter to broadcast...");
+    while let Some(text) = line_rx.recv().await {
+        let message = Message::Text { text: text.clone() };
         match send_message(&mut sender, &endpoint.secret_key(), &&message).await {
             Ok(_) => {
                 println!("Send message successfully!");
@@ -54,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
                 continue
             },
         }
-        buffer.clear();
+        println!("> sent: {text}");
     }
 
     router.shutdown().await?;
@@ -69,7 +72,7 @@ async fn send_message(sender: &mut GossipSender,secret_key: &SecretKey, message:
     Ok(())
 }
 
-async fn peer_message_handler(mut receiver: GossipReceiver) -> Result<(), anyhow::Error>{
+async fn peer_message_handler(mut receiver: GossipReceiver) -> anyhow::Result<()>{
     let mut connected_nodes = HashMap::new();
 
     loop {
@@ -111,6 +114,16 @@ async fn peer_message_handler(mut receiver: GossipReceiver) -> Result<(), anyhow
     }
     Ok(())
 } 
+
+fn input_loop(line_tx: tokio::sync::mpsc::Sender<String>) -> anyhow::Result<()> {
+    let mut buffer = String::new();
+    let stdin = std::io::stdin(); // We get `Stdin` here.
+    loop {
+        stdin.read_line(&mut buffer)?;
+        line_tx.blocking_send(buffer.clone())?;
+        buffer.clear();
+    }
+}
 
 impl Message {
     pub fn sign(&self,secret_key: &SecretKey) -> anyhow::Result<SignedMessage> {
