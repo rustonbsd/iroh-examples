@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 autosurgeon = {version="0.8"}
 automerge = {version="0.5"}
-iroh = "0.30"
+iroh = { version = "0.30", features = ["discovery-pkarr-dht"]}
 tokio ={ version="1",features = ["full"] }
 anyhow = "1"
 iroh-gossip = "0.30"
@@ -18,3 +18,14 @@ ed25519-dalek = { version = "2.0.0", features = ["serde", "rand_core"] }
 postcard = { version = "1", default-features = false, features = ["alloc", "use-std", "experimental-derive"] }
 futures-lite = "2"
 hex = "0.4"
+strum = { version = "0.26", features = ["derive"] }
+hickory-resolver = "=0.25.0-alpha.4"
+pkarr = { version = "2.2.0", features = [ "async", "relay", "dht"], default-features = false }
+z32 = "1"
+derive_more = { version = "1.0.0", features = [
+    "debug",
+    "display",
+    "into",
+    "from",
+] }
+sha2 = "0.10"

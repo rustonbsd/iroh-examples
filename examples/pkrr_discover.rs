@@ -1,26 +1,22 @@
-use std::{collections::HashMap, net::{Ipv4Addr, SocketAddrV4}, str::FromStr, thread::sleep, time::Duration};
+use std::{collections::HashMap, net::{Ipv4Addr, SocketAddrV4}, str::FromStr};
 
 use anyhow::bail;
 use bytes::Bytes;
 use ed25519_dalek::Signature;
-use iroh::{discovery::{dns::DnsDiscovery, pkarr::{dht::DhtDiscovery, PkarrRelayClient}, ConcurrentDiscovery}, endpoint, Endpoint, NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
-use iroh_examples::protocols::{gossip_info::GossipTopic, gossip_topic_discovery::GossipBuilder};
+use iroh::{endpoint, Endpoint, NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
 use iroh_gossip::{net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender}, proto::TopicId, ALPN};
 use serde::{Deserialize, Serialize};
 use futures_lite::stream::StreamExt;
-
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
 
     let topic_id = TopicId::from_bytes([37u8;32]);
     let secret_key =  SecretKey::generate(rand::rngs::OsRng);
-    
-    let discovery = DnsDiscovery::n0_dns();
+
     let endpoint = Endpoint::builder()
         .secret_key(secret_key)
-        .discovery_n0()
-        .discovery(Box::new(discovery))
+        .bind_addr_v4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 57473))
         .bind()
         .await?;
 
@@ -31,25 +27,14 @@ async fn main() -> anyhow::Result<()> {
         .spawn()
         .await?;
 
-    
-    /*
-    let gossip_topic = GossipTopic::from_passphrase("thisisatest");
-    println!("TOPIC: OGOOE: {}",gossip_topic.to_string());
-    let owngoss = GossipBuilder::new().with_endpoint(&endpoint).with_topic(&gossip_topic).build().await;
-
-    loop {
-        let _ = owngoss.inquery(&gossip_topic).await;
-        sleep(Duration::from_secs(2));
-    }*/
 
     println!("NodeId: {:?}",endpoint.node_addr().await);
     println!("Joining gossip sup..");
-    //let node_id_bytes = hex::decode("50211f29668e5e6d21fd232ef353ed01afef2422b6afb847f1e92d8f7c1cd23f")?;
-    //let node_id = NodeId::try_from(node_id_bytes.as_slice())?;
-    //endpoint.add_node_addr(NodeAddr::from_parts(node_id, Some(RelayUrl::from_str("https://euw1-1.relay.iroh.network./")?),vec![]))?;
-    //println!("endpoint");
-    let (mut sender, receiver) = gossip.subscribe(topic_id, vec![]).unwrap().split();
-    //let (mut sender, receiver) = gossip.subscribe_and_join(topic_id, vec![]).await.unwrap().split();
+    let node_id_bytes = hex::decode("50211f29668e5e6d21fd232ef353ed01afef2422b6afb847f1e92d8f7c1cd23f")?;
+    let node_id = NodeId::try_from(node_id_bytes.as_slice())?;
+    endpoint.add_node_addr(NodeAddr::from_parts(node_id, Some(RelayUrl::from_str("https://euw1-1.relay.iroh.network./")?),vec![]))?;
+    println!("endpoint");
+    let (mut sender, receiver) = gossip.subscribe_and_join(topic_id, vec![node_id]).await.unwrap().split();
 
     // Start peer message handler
     println!("starting peer message handler..");
