@@ -85,7 +85,7 @@ impl Gossip {
         loop {
             let signed_packet = //node_info.to_pkarr_signed_packet(&self.endpoint.secret_key(), 600)?;
                 gossip_info.to_pkarr_signed_packet(&self.topic.to_secret_key(), 600)?;
-                println!("!");
+                
             pkarr_client.publish(&signed_packet).await?;
             println!("Published {:?}",signed_packet);
             sleep(Duration::from_secs(300)).await;

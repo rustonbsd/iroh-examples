@@ -6,10 +6,12 @@ edition = "2021"
 [dependencies]
 autosurgeon = {version="0.8"}
 automerge = {version="0.5"}
-iroh = { version = "0.30", features = ["discovery-pkarr-dht"]}
+iroh = "0.30"
+iroh-docs = { version = "0.30", features = ["rpc"] }
+iroh-blobs ={ version = "0.30", features = ["rpc"] }
+iroh-gossip = { version = "0.30", features = ["rpc"] }
 tokio ={ version="1",features = ["full"] }
 anyhow = "1"
-iroh-gossip = "0.30"
 rand = "0.8"
 serde = "1"
 serde_json = "1"
@@ -29,3 +31,4 @@ derive_more = { version = "1.0.0", features = [
     "from",
 ] }
 sha2 = "0.10"
+quic-rpc = { version = "0.17" }

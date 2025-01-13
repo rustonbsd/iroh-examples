@@ -4,8 +4,10 @@ use anyhow::bail;
 use bytes::Bytes;
 use ed25519_dalek::Signature;
 use iroh::{discovery::{dns::DnsDiscovery, pkarr::{dht::DhtDiscovery, PkarrRelayClient}, ConcurrentDiscovery}, endpoint, Endpoint, NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
+use iroh_blobs::{net_protocol::Blobs, util::local_pool::{self, LocalPool}};
+use iroh_docs::protocol::Docs;
 use iroh_examples::protocols::{gossip_info::GossipTopic, gossip_topic_discovery::GossipBuilder};
-use iroh_gossip::{net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender}, proto::TopicId, ALPN};
+use iroh_gossip::{net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender}, proto::TopicId};
 use serde::{Deserialize, Serialize};
 use futures_lite::stream::StreamExt;
 
@@ -23,11 +25,18 @@ async fn main() -> anyhow::Result<()> {
         .discovery(Box::new(discovery))
         .bind()
         .await?;
+    
+    let local_pool = LocalPool::default();
+    let blobs = Blobs::memory().build(local_pool.handle(), &endpoint);
 
     let gossip = Gossip::builder().spawn(endpoint.clone()).await.unwrap();
+    
+    let docs = Docs::memory().spawn(&blobs, &gossip).await?;
 
     let router = iroh::protocol::Router::builder(endpoint.clone())
-        .accept(ALPN, gossip.clone())
+        .accept(iroh_gossip::ALPN, gossip.clone())
+        .accept(iroh_blobs::ALPN, blobs.clone())
+        .accept(iroh_docs::ALPN, docs.clone())
         .spawn()
         .await?;
 
@@ -48,8 +57,8 @@ async fn main() -> anyhow::Result<()> {
     //let node_id = NodeId::try_from(node_id_bytes.as_slice())?;
     //endpoint.add_node_addr(NodeAddr::from_parts(node_id, Some(RelayUrl::from_str("https://euw1-1.relay.iroh.network./")?),vec![]))?;
     //println!("endpoint");
-    let (mut sender, receiver) = gossip.subscribe(topic_id, vec![]).unwrap().split();
-    //let (mut sender, receiver) = gossip.subscribe_and_join(topic_id, vec![]).await.unwrap().split();
+    //let (mut sender, receiver) = gossip.subscribe(topic_id, vec![]).unwrap().split();
+    let (mut sender, receiver) = gossip.subscribe_and_join(topic_id, vec![]).await.unwrap().split();
 
     // Start peer message handler
     println!("starting peer message handler..");
