@@ -96,6 +96,7 @@ impl TopicTrackerProtocol {
             )
             .await?;
         let (mut send, mut recv) = conn.open_bi().await?;
+        println!("connected");
 
         let msg = Protocol::TopicRequest((topic.clone(), self.node_id.clone()));
         Self::send_msg(msg, &mut send).await?;
@@ -134,6 +135,7 @@ impl TopicTrackerProtocol {
     async fn accept(&self, conn: Connecting) -> Result<()> {
         let (mut send, mut recv) = conn.await?.accept_bi().await?;
 
+        println!("accept");
         let msg = Self::recv_msg(&mut recv).await?;
         match msg {
             Protocol::TopicRequest((topic, remote_node_id)) => {
@@ -142,6 +144,7 @@ impl TopicTrackerProtocol {
                     Some(node_ids) => {
                         let latest_list = node_ids
                             .iter()
+                            .rev()
                             .take(Self::MAX_TOPIC_LIST_SIZE)
                             .map(|i| *i)
                             .collect();
