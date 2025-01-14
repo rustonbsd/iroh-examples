@@ -4,25 +4,33 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-autosurgeon = {version="0.8"}
-automerge = {version="0.5"}
-iroh = "0.30"
+autosurgeon = { version = "0.8" }
+automerge = { version = "0.5" }
+iroh = "0.31"
 iroh-docs = { version = "0.30", features = ["rpc"] }
-iroh-blobs ={ version = "0.30", features = ["rpc"] }
-iroh-gossip = { version = "0.30", features = ["rpc"] }
-tokio ={ version="1",features = ["full"] }
+iroh-blobs = { version = "0.30", features = ["rpc"] }
+iroh-gossip = { version = "0.31", features = ["rpc"] }
+tokio = { version = "1", features = ["full"] }
 anyhow = "1"
 rand = "0.8"
 serde = "1"
 serde_json = "1"
 bytes = { version = "1.7", features = ["serde"] }
 ed25519-dalek = { version = "2.0.0", features = ["serde", "rand_core"] }
-postcard = { version = "1", default-features = false, features = ["alloc", "use-std", "experimental-derive"] }
+postcard = { version = "1", default-features = false, features = [
+    "alloc",
+    "use-std",
+    "experimental-derive",
+] }
 futures-lite = "2"
 hex = "0.4"
 strum = { version = "0.26", features = ["derive"] }
 hickory-resolver = "=0.25.0-alpha.4"
-pkarr = { version = "2.2.0", features = [ "async", "relay", "dht"], default-features = false }
+pkarr = { version = "2.2.0", features = [
+    "async",
+    "relay",
+    "dht",
+], default-features = false }
 z32 = "1"
 derive_more = { version = "1.0.0", features = [
     "debug",
@@ -32,3 +40,4 @@ derive_more = { version = "1.0.0", features = [
 ] }
 sha2 = "0.10"
 quic-rpc = { version = "0.17" }
+iroh-topic-tracker = "0.1.2"
