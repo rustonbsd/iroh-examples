@@ -140,17 +140,19 @@ impl TopicTrackerProtocol {
         match msg {
             Protocol::TopicRequest((topic, remote_node_id)) => {
                 let mut _kv = self.kv.lock().await;
+                let resp;
                 match _kv.get_mut(&topic.0) {
                     Some(node_ids) => {
                         let latest_list = node_ids
                             .iter()
+                            .filter(|&i| !i.eq(&remote_node_id))
                             .rev()
                             .take(Self::MAX_TOPIC_LIST_SIZE)
                             .map(|i| *i)
                             .collect();
 
                         println!("Sending");
-                        Self::send_msg(Protocol::TopicList(latest_list), &mut send).await?;
+                        resp = Protocol::TopicList(latest_list);
 
                         if node_ids.contains(&remote_node_id) {
                             node_ids.retain(|nid| !nid.eq(&remote_node_id));
@@ -161,10 +163,14 @@ impl TopicTrackerProtocol {
                         let mut node_ids = Vec::with_capacity(Self::MAX_NODE_IDS_PER_TOPIC);
                         node_ids.push(remote_node_id);
                         _kv.insert(topic.0, node_ids);
+                        
+                        resp = Protocol::TopicList(vec![]);
                     }
                 };
-                Self::recv_msg(&mut recv).await?;
+
+                Self::send_msg(resp, &mut send).await?;
                 Self::send_msg(Protocol::Done,&mut send).await?;
+                Self::recv_msg(&mut recv).await?;
 
                 drop(_kv);
             }
